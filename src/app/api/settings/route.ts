@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     if (body.globalFooter !== undefined) updateFields.globalFooter = body.globalFooter;
     if (body.logoImg !== undefined) updateFields.logoImg = body.logoImg;
     if (body.logoText !== undefined) updateFields.logoText = body.logoText;
+    if (body.sectionGap !== undefined) updateFields.sectionGap = body.sectionGap;
 
     const settings = await SiteSettings.findOneAndUpdate(
       { key: "global" },

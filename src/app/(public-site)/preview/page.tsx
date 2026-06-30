@@ -14,6 +14,7 @@ interface GlobalSettings {
   secondaryColor: string;
   gradientStart: string;
   gradientEnd: string;
+  sectionGap: string;
 }
 
 const DEFAULT_SETTINGS: GlobalSettings = {
@@ -23,6 +24,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   secondaryColor: "#1e3a8a",
   gradientStart: "#3b82f6",
   gradientEnd: "#1e3a8a",
+  sectionGap: "8",
 };
 
 export default function PreviewPage() {
@@ -45,6 +47,7 @@ export default function PreviewPage() {
               secondaryColor: data.settings.secondaryColor || "#1e3a8a",
               gradientStart: data.settings.gradientStart || "#3b82f6",
               gradientEnd: data.settings.gradientEnd || "#1e3a8a",
+              sectionGap: data.settings.sectionGap || "8",
             });
             return;
           }
@@ -60,6 +63,7 @@ export default function PreviewPage() {
         secondaryColor: localStorage.getItem("builder-secondary-color") || "#1e3a8a",
         gradientStart: localStorage.getItem("builder-gradient-start") || "#3b82f6",
         gradientEnd: localStorage.getItem("builder-gradient-end") || "#1e3a8a",
+        sectionGap: localStorage.getItem("builder-section-gap") || "8",
       });
     }
     loadSettings();
@@ -149,7 +153,9 @@ export default function PreviewPage() {
 
       {/* Rendered Layout Page — CSS vars applied so var(--color-primary) resolves in components */}
       <div
-        className="w-full flex-1 flex flex-col gap-8"
+        className={`w-full flex-1 flex flex-col ${
+          globalSettings.sectionGap === "4" ? "gap-4" : globalSettings.sectionGap === "12" ? "gap-12" : globalSettings.sectionGap === "16" ? "gap-16" : "gap-8"
+        }`}
         style={{
           "--color-primary": globalSettings.primaryColor,
           "--color-secondary": globalSettings.secondaryColor,

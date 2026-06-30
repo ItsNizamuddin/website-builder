@@ -12,6 +12,7 @@ const SiteSettingsSchema = new Schema(
     globalFooter: { type: Schema.Types.Mixed, default: null },
     logoImg: { type: String, default: "" },
     logoText: { type: String, default: "" },
+    sectionGap: { type: String, default: "8" },
   },
   { timestamps: true, strict: false }
 );

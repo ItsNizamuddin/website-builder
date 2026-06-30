@@ -17,6 +17,7 @@ export default function PublicSiteLayout({
   const [gradientEnd, setGradientEnd] = useState("#1e3a8a");
   const [logoImg, setLogoImg] = useState("");
   const [logoText, setLogoText] = useState("SkillDeck");
+  const [sectionGap, setSectionGap] = useState("8");
 
   useEffect(() => {
     async function loadGlobalSettings() {
@@ -37,6 +38,7 @@ export default function PublicSiteLayout({
             if (settingsData.settings.gradientEnd) setGradientEnd(settingsData.settings.gradientEnd);
             if (settingsData.settings.logoImg !== undefined) setLogoImg(settingsData.settings.logoImg);
             if (settingsData.settings.logoText !== undefined) setLogoText(settingsData.settings.logoText);
+            if (settingsData.settings.sectionGap !== undefined) setSectionGap(settingsData.settings.sectionGap);
           }
         }
       } catch (err) {
@@ -66,6 +68,8 @@ export default function PublicSiteLayout({
         if (localSecondary) setSecondaryColor(localSecondary);
         if (localGradStart) setGradientStart(localGradStart);
         if (localGradEnd) setGradientEnd(localGradEnd);
+        const localGap = localStorage.getItem("builder-section-gap");
+        if (localGap) setSectionGap(localGap);
       }
     }
 
@@ -75,7 +79,9 @@ export default function PublicSiteLayout({
 
   return (
     <div
-      className="min-h-screen bg-white text-slate-800 font-sans flex flex-col"
+      className={`min-h-screen bg-white text-slate-800 font-sans flex flex-col ${
+        sectionGap === "4" ? "gap-4" : sectionGap === "12" ? "gap-12" : sectionGap === "16" ? "gap-16" : "gap-8"
+      }`}
       style={{
         "--color-primary": primaryColor,
         "--color-secondary": secondaryColor,

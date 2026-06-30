@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { PageData, SectionNode, ComponentNode, ComponentType, ResponsiveLayout } from "../types/builder";
+import { PageData, SectionNode, ComponentNode, ComponentType, ResponsiveLayout, GlobalBlock } from "../types/builder";
 
 interface SelectedElement {
   type: "section" | "component" | "globalHeader" | "globalFooter";
@@ -25,7 +25,15 @@ interface BuilderStore {
   logoText: string;
   sectionGap: string;
   leftSidebarCollapsed: boolean;
+  activeDrawer: "add" | "pages" | "layers" | "components" | null;
   hoveredElementId: string | null;
+
+  // Global Reusable Blocks State & Actions
+  globalBlocks: GlobalBlock[];
+  saveSectionAsGlobalBlock: (sectionId: string, name: string) => void;
+  insertGlobalBlockSection: (globalBlockId: string) => void;
+  unlinkGlobalBlockSection: (sectionId: string) => void;
+  deleteGlobalBlock: (globalBlockId: string) => void;
 
   // Actions
   undo: () => void;
@@ -38,6 +46,7 @@ interface BuilderStore {
   setZoom: (zoom: number) => void;
   setSectionGap: (gap: string) => void;
   setLeftSidebarCollapsed: (collapsed: boolean) => void;
+  setActiveDrawer: (drawer: "add" | "pages" | "layers" | "components" | null) => void;
 
   // Section Mutations
   addSection: (layout?: Partial<ResponsiveLayout>) => void;
@@ -54,11 +63,17 @@ interface BuilderStore {
   removeComponent: (sectionId: string, componentId: string) => void;
   updateComponentProps: (sectionId: string, componentId: string, props: Record<string, any>) => void;
   reorderComponents: (sectionId: string, activeId: string, overId: string) => void;
+  toggleShowHeader: () => void;
+  toggleShowFooter: () => void;
+  updateGlobalHeaderProps: (props: Record<string, any>) => void;
+  updateGlobalFooterProps: (props: Record<string, any>) => void;
 }
 
 const DEFAULT_PAGE: PageData = {
   name: "Untitled Page",
   slug: "untitled",
+  showHeader: true,
+  showFooter: true,
   sections: [
     {
       id: "section-welcome",
@@ -247,15 +262,15 @@ const getDefaultProps = (type: ComponentType): Record<string, any> => {
         subheading: "An engaging subtitle to hook your website visitors and explain your product value proposition.",
         buttonText: "Discover More",
         buttonUrl: "#",
-        bgStyle: "preset-gradient",
-        bgColor: "#2563eb",
-        bgGradient: "from-blue-600 to-indigo-900",
+        bgType: "gradient",
         gradientStart: "#3b82f6",
         gradientEnd: "#1e3a8a",
         textColor: "#ffffff",
         ctaBgColor: "#ffffff",
         ctaTextColor: "#2563eb",
         align: "left",
+        borderRadius: "rounded-2xl",
+        shadowSize: "shadow-xl",
         marginTop: "mt-0",
         marginBottom: "mb-0",
       };
@@ -266,10 +281,13 @@ const getDefaultProps = (type: ComponentType): Record<string, any> => {
         role: "Lead Engineer",
         company: "VLSITech",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        bgType: "color",
         bgColor: "#ffffff",
         textColor: "#334155",
         authorColor: "#0f172a",
         accentColor: "#2563eb",
+        borderRadius: "rounded-xl",
+        shadowSize: "shadow-sm",
         marginTop: "mt-4",
         marginBottom: "mb-4",
       };
@@ -285,10 +303,13 @@ const getDefaultProps = (type: ComponentType): Record<string, any> => {
             answer: "Absolutely. Toggle the responsive preview at the top to set different column structures for mobile, tablet, and desktop.",
           },
         ],
+        bgType: "color",
         bgColor: "#ffffff",
         textColor: "#1e293b",
         answerColor: "#475569",
         accentColor: "#2563eb",
+        borderRadius: "rounded-xl",
+        shadowSize: "shadow-sm",
         marginTop: "mt-4",
         marginBottom: "mb-4",
       };
@@ -301,11 +322,14 @@ const getDefaultProps = (type: ComponentType): Record<string, any> => {
         duration: "24 Hours",
         image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80",
         buttonText: "Enroll Now",
+        bgType: "color",
         bgColor: "#ffffff",
         textColor: "#1e293b",
         detailsColor: "#64748b",
         accentColor: "#2563eb",
         url: "#",
+        borderRadius: "rounded-xl",
+        shadowSize: "shadow-md",
         marginTop: "mt-4",
         marginBottom: "mb-4",
       };
@@ -358,6 +382,44 @@ export const useBuilderStore = create<BuilderStore>((set, get) => {
     setHoveredElementId: (id) => set({ hoveredElementId: id }),
     leftSidebarCollapsed: false,
     setLeftSidebarCollapsed: (collapsed) => set({ leftSidebarCollapsed: collapsed }),
+    activeDrawer: null,
+    setActiveDrawer: (drawer) => set({ activeDrawer: drawer }),
+    toggleShowHeader: () => {
+      updatePresent((present) => {
+        present.showHeader = present.showHeader === undefined ? false : !present.showHeader;
+      });
+    },
+    toggleShowFooter: () => {
+      updatePresent((present) => {
+        present.showFooter = present.showFooter === undefined ? false : !present.showFooter;
+      });
+    },
+    updateGlobalHeaderProps: (props) => {
+      const { globalHeader } = get();
+      if (!globalHeader) return;
+      set({
+        globalHeader: {
+          ...globalHeader,
+          props: { ...globalHeader.props, ...props }
+        }
+      });
+      updatePresent((present) => {
+        present.showHeader = true;
+      });
+    },
+    updateGlobalFooterProps: (props) => {
+      const { globalFooter } = get();
+      if (!globalFooter) return;
+      set({
+        globalFooter: {
+          ...globalFooter,
+          props: { ...globalFooter.props, ...props }
+        }
+      });
+      updatePresent((present) => {
+        present.showFooter = true;
+      });
+    },
     globalHeader: DEFAULT_HEADER,
     globalFooter: DEFAULT_FOOTER,
     primaryColor: "#2563eb",
@@ -367,6 +429,62 @@ export const useBuilderStore = create<BuilderStore>((set, get) => {
     logoImg: "",
     logoText: "SkillDeck",
     sectionGap: "8",
+    globalBlocks: [],
+    saveSectionAsGlobalBlock: (sectionId: string, name: string) => {
+      const { present, globalBlocks } = get();
+      const section = present.sections.find((s) => s.id === sectionId);
+      if (!section) return;
+
+      const blockId = `block-${Date.now()}`;
+      const clonedSection = clone(section);
+      clonedSection.globalBlockId = blockId;
+
+      const newBlock: GlobalBlock = {
+        id: blockId,
+        name: name || "Saved Reusable Block",
+        section: clonedSection,
+        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      // Link current section in present state to this global block
+      updatePresent((p) => {
+        const targetSec = p.sections.find((s) => s.id === sectionId);
+        if (targetSec) targetSec.globalBlockId = blockId;
+      });
+
+      set({ globalBlocks: [...globalBlocks, newBlock] });
+    },
+
+    insertGlobalBlockSection: (globalBlockId: string) => {
+      const { globalBlocks } = get();
+      const masterBlock = globalBlocks.find((b) => b.id === globalBlockId);
+      if (!masterBlock) return;
+
+      updatePresent((present) => {
+        const id = `section-${Date.now()}`;
+        const newSec = clone(masterBlock.section);
+        newSec.id = id;
+        newSec.globalBlockId = globalBlockId;
+        // regenerate inner component IDs
+        newSec.children = newSec.children.map((c) => ({
+          ...c,
+          id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        }));
+        present.sections.push(newSec);
+      });
+    },
+
+    unlinkGlobalBlockSection: (sectionId: string) => {
+      updatePresent((present) => {
+        const sec = present.sections.find((s) => s.id === sectionId);
+        if (sec) delete sec.globalBlockId;
+      });
+    },
+
+    deleteGlobalBlock: (globalBlockId: string) => {
+      const { globalBlocks } = get();
+      set({ globalBlocks: globalBlocks.filter((b) => b.id !== globalBlockId) });
+    },
 
     undo: () => {
       const { past, present, future } = get();

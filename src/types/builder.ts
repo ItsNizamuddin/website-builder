@@ -28,6 +28,14 @@ export interface SectionNode {
   layout: ResponsiveLayout;
   children: ComponentNode[];
   style?: Record<string, any>;
+  globalBlockId?: string; // If linked to a reusable master component block
+}
+
+export interface GlobalBlock {
+  id: string;
+  name: string;
+  section: SectionNode;
+  createdAt?: string;
 }
 
 export interface PageData {
@@ -35,4 +43,6 @@ export interface PageData {
   name: string;
   slug: string;
   sections: SectionNode[];
+  showHeader?: boolean;
+  showFooter?: boolean;
 }

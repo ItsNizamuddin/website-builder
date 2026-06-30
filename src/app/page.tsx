@@ -56,6 +56,7 @@ export default function BuilderPage() {
             if (settingsData.settings.gradientEnd) updateObj.gradientEnd = settingsData.settings.gradientEnd;
             if (settingsData.settings.logoImg !== undefined) updateObj.logoImg = settingsData.settings.logoImg;
             if (settingsData.settings.logoText !== undefined) updateObj.logoText = settingsData.settings.logoText;
+            if (settingsData.settings.sectionGap !== undefined) updateObj.sectionGap = settingsData.settings.sectionGap;
             useBuilderStore.setState(updateObj);
           }
         }
