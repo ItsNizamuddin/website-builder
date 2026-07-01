@@ -20,6 +20,22 @@ export const gridCols = {
     "70-30": "lg:grid-cols-[7fr_3fr]",
     "30-70": "lg:grid-cols-[3fr_7fr]",
     "25-75": "lg:grid-cols-[1fr_3fr]",
+    "1x1": "lg:grid-cols-1 lg:grid-rows-1",
+    "2x1": "lg:grid-cols-2 lg:grid-rows-1",
+    "3x1": "lg:grid-cols-3 lg:grid-rows-1",
+    "4x1": "lg:grid-cols-4 lg:grid-rows-1",
+    "1x2": "lg:grid-cols-1 lg:grid-rows-2",
+    "2x2": "lg:grid-cols-2 lg:grid-rows-2",
+    "3x2": "lg:grid-cols-3 lg:grid-rows-2",
+    "4x2": "lg:grid-cols-4 lg:grid-rows-2",
+    "1x3": "lg:grid-cols-1 lg:grid-rows-3",
+    "2x3": "lg:grid-cols-2 lg:grid-rows-3",
+    "3x3": "lg:grid-cols-3 lg:grid-rows-3",
+    "4x3": "lg:grid-cols-4 lg:grid-rows-3",
+    "1x4": "lg:grid-cols-1 lg:grid-rows-4",
+    "2x4": "lg:grid-cols-2 lg:grid-rows-4",
+    "3x4": "lg:grid-cols-3 lg:grid-rows-4",
+    "4x4": "lg:grid-cols-4 lg:grid-rows-4",
   },
   tablet: {
     "1-col": "md:grid-cols-1",
@@ -29,6 +45,22 @@ export const gridCols = {
     "70-30": "md:grid-cols-[7fr_3fr]",
     "30-70": "md:grid-cols-[3fr_7fr]",
     "25-75": "md:grid-cols-[1fr_3fr]",
+    "1x1": "md:grid-cols-1 md:grid-rows-1",
+    "2x1": "md:grid-cols-2 md:grid-rows-1",
+    "3x1": "md:grid-cols-3 md:grid-rows-1",
+    "4x1": "md:grid-cols-4 md:grid-rows-1",
+    "1x2": "md:grid-cols-1 md:grid-rows-2",
+    "2x2": "md:grid-cols-2 md:grid-rows-2",
+    "3x2": "md:grid-cols-3 md:grid-rows-2",
+    "4x2": "md:grid-cols-4 md:grid-rows-2",
+    "1x3": "md:grid-cols-1 md:grid-rows-3",
+    "2x3": "md:grid-cols-2 md:grid-rows-3",
+    "3x3": "md:grid-cols-3 md:grid-rows-3",
+    "4x3": "md:grid-cols-4 md:grid-rows-3",
+    "1x4": "md:grid-cols-1 md:grid-rows-4",
+    "2x4": "md:grid-cols-2 md:grid-rows-4",
+    "3x4": "md:grid-cols-3 md:grid-rows-4",
+    "4x4": "md:grid-cols-4 md:grid-rows-4",
   },
   mobile: {
     "1-col": "grid-cols-1",
@@ -38,6 +70,22 @@ export const gridCols = {
     "70-30": "grid-cols-1",
     "30-70": "grid-cols-1",
     "25-75": "grid-cols-1",
+    "1x1": "grid-cols-1 grid-rows-1",
+    "2x1": "grid-cols-1 grid-rows-1",
+    "3x1": "grid-cols-1 grid-rows-1",
+    "4x1": "grid-cols-1 grid-rows-1",
+    "1x2": "grid-cols-1 grid-rows-2",
+    "2x2": "grid-cols-1 grid-rows-2",
+    "3x2": "grid-cols-1 grid-rows-2",
+    "4x2": "grid-cols-1 grid-rows-2",
+    "1x3": "grid-cols-1 grid-rows-3",
+    "2x3": "grid-cols-1 grid-rows-3",
+    "3x3": "grid-cols-1 grid-rows-3",
+    "4x3": "grid-cols-1 grid-rows-3",
+    "1x4": "grid-cols-1 grid-rows-4",
+    "2x4": "grid-cols-1 grid-rows-4",
+    "3x4": "grid-cols-1 grid-rows-4",
+    "4x4": "grid-cols-1 grid-rows-4",
   },
 };
 
@@ -47,7 +95,7 @@ interface SectionContainerProps {
 }
 
 export const SectionContainer: React.FC<SectionContainerProps> = ({ section, index }) => {
-  const { selectedElement, setSelectedElement, removeSection, duplicateSection, addComponentToSection, present, hoveredElementId } = useBuilderStore();
+  const { selectedElement, setSelectedElement, removeSection, duplicateSection, addComponentToSection, present, hoveredElementId, activeDevice } = useBuilderStore();
   const { setNodeRef: setDroppableRef } = useDroppable({
     id: `droppable-${section.id}`,
     data: {
@@ -99,11 +147,13 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({ section, ind
     }
   };
 
-  const desktopClass = gridCols.desktop[section.layout.desktop as keyof typeof gridCols.desktop] || "lg:grid-cols-1";
-  const tabletClass = gridCols.tablet[section.layout.tablet as keyof typeof gridCols.tablet] || "md:grid-cols-1";
-  const mobileClass = gridCols.mobile[section.layout.mobile as keyof typeof gridCols.mobile] || "grid-cols-1";
-
   const getColCount = (layout: string) => {
+    if (layout.includes("x")) {
+      const parts = layout.split("x");
+      const cols = parseInt(parts[0]);
+      const rows = parseInt(parts[1]);
+      return (isNaN(cols) ? 1 : cols) * (isNaN(rows) ? 1 : rows);
+    }
     if (layout === "1-col") return 1;
     if (layout === "2-col" || layout === "70-30" || layout === "30-70" || layout === "25-75") return 2;
     if (layout === "3-col") return 3;
@@ -111,7 +161,14 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({ section, ind
     return 1;
   };
 
-  const currentCols = getColCount(section.layout.desktop);
+  // Strip media query prefix to force local layout size in simulator
+  const getGridClassForEditMode = (device: "desktop" | "tablet" | "mobile", layout: string) => {
+    const baseClass = gridCols[device][layout as keyof typeof gridCols.desktop] || "";
+    return baseClass.replace(/lg:|md:/g, "");
+  };
+
+  const gridLayoutClass = getGridClassForEditMode(activeDevice, section.layout[activeDevice]);
+  const currentCols = getColCount(section.layout[activeDevice]);
   const emptySlotsCount = Math.max(0, currentCols - section.children.length);
 
   const { outerClasses, outerInlineStyle, innerClasses } = getSectionStyles(section.style);
@@ -220,7 +277,7 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({ section, ind
 
       {/* Grid container with droppable hook */}
       <div ref={setDroppableRef} className={`min-h-[140px] flex flex-col justify-center ${innerClasses}`}>
-        <div className={`grid gap-6 ${desktopClass} ${tabletClass} ${mobileClass}`}>
+        <div className={`grid gap-6 ${gridLayoutClass}`}>
           <SortableContext
             items={section.children.map((c) => c.id)}
             strategy={verticalListSortingStrategy}

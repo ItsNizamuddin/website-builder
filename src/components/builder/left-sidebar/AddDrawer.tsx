@@ -12,7 +12,7 @@ import { ComponentType } from "@/types/builder";
 const LightElementCard: React.FC<{
   label: string;
   icon: React.ReactNode;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }> = ({ label, icon, onClick }) => (
   <button
     onClick={onClick}
@@ -27,7 +27,11 @@ const LightElementCard: React.FC<{
   </button>
 );
 
-export const AddDrawer: React.FC = () => {
+interface AddDrawerProps {
+  onQuickStackClick?: (e: React.MouseEvent) => void;
+}
+
+export const AddDrawer: React.FC<AddDrawerProps> = ({ onQuickStackClick }) => {
   const {
     addSectionTemplate,
     addSection,
@@ -67,7 +71,7 @@ export const AddDrawer: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto p-4 gap-4 animate-in fade-in duration-100">
+    <div className="flex flex-col h-full overflow-y-auto p-1.5 gap-4 animate-in fade-in duration-100">
       {/* Header & Tabs */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <h3 className="text-sm font-extrabold text-slate-900">Add</h3>
@@ -381,7 +385,7 @@ export const AddDrawer: React.FC = () => {
             <div className="grid grid-cols-3 gap-2">
               <LightElementCard label="Section" icon={<Layout className="w-4 h-4" />} onClick={() => addSection({ desktop: "1-col" })} />
               <LightElementCard label="Container" icon={<Box className="w-4 h-4" />} onClick={() => addSection({ desktop: "1-col" })} />
-              <LightElementCard label="Quick Stack" icon={<LayoutGrid className="w-4 h-4" />} onClick={() => addSection({ desktop: "2-col" })} />
+              <LightElementCard label="Quick Stack" icon={<LayoutGrid className="w-4 h-4" />} onClick={(e) => onQuickStackClick?.(e)} />
               <LightElementCard label="V Flex" icon={<Columns className="w-4 h-4 rotate-90" />} onClick={() => addSection({ desktop: "1-col" })} />
               <LightElementCard label="H Flex" icon={<Columns className="w-4 h-4" />} onClick={() => addSection({ desktop: "2-col" })} />
             </div>

@@ -5,6 +5,7 @@ interface SelectedElement {
   type: "section" | "component" | "globalHeader" | "globalFooter";
   sectionId?: string;
   elementId?: string;
+  subElementKey?: string;
 }
 
 interface BuilderStore {

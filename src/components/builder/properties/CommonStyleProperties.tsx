@@ -3,6 +3,7 @@
 import React from "react";
 import { ComponentNode } from "@/types/builder";
 import { ColorPicker } from "./ColorPicker";
+import { useBuilderStore } from "@/store/useBuilderStore";
 
 interface CommonStylePropertiesProps {
   component: ComponentNode;
@@ -10,17 +11,66 @@ interface CommonStylePropertiesProps {
 }
 
 export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ component, handlePropChange }) => {
-  const hasTypography = [
-    "heading",
-    "text",
-    "button",
-    "hero",
-    "testimonial",
-    "faq",
-    "courseCard",
-    "navbar",
-    "footer",
-  ].includes(component.type);
+  const { selectedElement } = useBuilderStore();
+  const subKey = selectedElement?.subElementKey;
+
+  const isComposite = ["hero", "testimonial", "faq", "courseCard", "navbar", "footer"].includes(component.type);
+  const hasTypography = isComposite
+    ? !!subKey
+    : ["heading", "text", "button"].includes(component.type);
+
+  // Resolve target prop keys based on sub-element selection
+  const getSubPropKey = (baseKey: string) => {
+    if (!subKey) return baseKey;
+
+    if (baseKey === "fontWeight") {
+      if (subKey === "heading" || subKey === "title") return "titleFontWeight";
+      if (subKey === "subheading") return "subtitleFontWeight";
+      if (subKey === "quote") return "quoteFontWeight";
+      if (subKey === "author") return "authorFontWeight";
+      if (subKey === "question") return "questionFontWeight";
+      if (subKey === "answer") return "answerFontWeight";
+      if (subKey === "duration" || subKey === "instructor") return "detailsFontWeight";
+    }
+
+    if (baseKey === "lineHeight") {
+      if (subKey === "heading" || subKey === "title") return "titleLineHeight";
+      if (subKey === "subheading") return "subtitleLineHeight";
+      if (subKey === "quote") return "quoteLineHeight";
+      if (subKey === "author") return "authorLineHeight";
+      if (subKey === "question") return "questionLineHeight";
+      if (subKey === "answer") return "answerLineHeight";
+      if (subKey === "duration" || subKey === "instructor") return "detailsLineHeight";
+    }
+
+    if (baseKey === "align") {
+      if (subKey === "heading" || subKey === "title") return "titleAlign";
+      if (subKey === "subheading") return "subtitleAlign";
+      if (subKey === "quote") return "quoteAlign";
+      if (subKey === "author") return "authorAlign";
+      if (subKey === "question") return "questionAlign";
+      if (subKey === "answer") return "answerAlign";
+      if (subKey === "duration" || subKey === "instructor") return "detailsAlign";
+    }
+
+    if (baseKey === "textDecoration") {
+      if (subKey === "heading" || subKey === "title") return "titleDecoration";
+      if (subKey === "subheading") return "subtitleDecoration";
+      if (subKey === "quote") return "quoteDecoration";
+      if (subKey === "author") return "authorDecoration";
+      if (subKey === "question") return "questionDecoration";
+      if (subKey === "answer") return "answerDecoration";
+      if (subKey === "duration" || subKey === "instructor") return "detailsDecoration";
+    }
+
+    return baseKey;
+  };
+
+  // Resolve target default values for sub-element styling keys
+  const getSubPropVal = (baseKey: string, fallback: string) => {
+    const resolvedKey = getSubPropKey(baseKey);
+    return component.props[resolvedKey] || fallback;
+  };
 
   // Helper to map pixel or auto value to corresponding Tailwind spacing class
   const getTailwindClass = (prefix: string, rawVal: string) => {
@@ -93,74 +143,80 @@ export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ co
           </div>
 
           {/* Align Horizontal (X) Row */}
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Align X</span>
-            <div className="w-44 grid grid-cols-4 gap-1 bg-slate-100 border border-slate-200 p-0.5 rounded-lg">
-              {[
-                { val: "left", label: "Left" },
-                { val: "center", label: "Center" },
-                { val: "right", label: "Right" },
-                { val: "stretch", label: "Stretch" },
-              ].map((item) => (
-                <button
-                  key={item.val}
-                  type="button"
-                  onClick={() => handlePropChange("alignX", item.val)}
-                  className={`py-1 text-[10px] rounded-md font-bold smooth-transition border-0 cursor-pointer ${
-                    (component.props.alignX || "left") === item.val
-                      ? "bg-blue-600 text-white shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+          {!isComposite && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Align X</span>
+              <div className="w-44 grid grid-cols-4 gap-1 bg-slate-100 border border-slate-200 p-0.5 rounded-lg">
+                {[
+                  { val: "left", label: "Left" },
+                  { val: "center", label: "Center" },
+                  { val: "right", label: "Right" },
+                  { val: "stretch", label: "Stretch" },
+                ].map((item) => (
+                  <button
+                    key={item.val}
+                    type="button"
+                    onClick={() => handlePropChange("alignX", item.val)}
+                    className={`py-1 text-[10px] rounded-md font-bold smooth-transition border-0 cursor-pointer ${
+                      (component.props.alignX || "left") === item.val
+                        ? "bg-blue-600 text-white shadow-2xs"
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Align Vertical (Y) Row */}
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Align Y</span>
-            <div className="w-44 grid grid-cols-4 gap-1 bg-slate-100 border border-slate-200 p-0.5 rounded-lg">
-              {[
-                { val: "top", label: "Top" },
-                { val: "center", label: "Center" },
-                { val: "bottom", label: "Bottom" },
-                { val: "stretch", label: "Stretch" },
-              ].map((item) => (
-                <button
-                  key={item.val}
-                  type="button"
-                  onClick={() => handlePropChange("alignY", item.val)}
-                  className={`py-1 text-[10px] rounded-md font-bold smooth-transition border-0 cursor-pointer ${
-                    (component.props.alignY || "top") === item.val
-                      ? "bg-blue-600 text-white shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+          {!isComposite && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Align Y</span>
+              <div className="w-44 grid grid-cols-4 gap-1 bg-slate-100 border border-slate-200 p-0.5 rounded-lg">
+                {[
+                  { val: "top", label: "Top" },
+                  { val: "center", label: "Center" },
+                  { val: "bottom", label: "Bottom" },
+                  { val: "stretch", label: "Stretch" },
+                ].map((item) => (
+                  <button
+                    key={item.val}
+                    type="button"
+                    onClick={() => handlePropChange("alignY", item.val)}
+                    className={`py-1 text-[10px] rounded-md font-bold smooth-transition border-0 cursor-pointer ${
+                      (component.props.alignY || "top") === item.val
+                        ? "bg-blue-600 text-white shadow-2xs"
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Child Gap Row */}
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Gap</span>
-            <select
-              value={component.props.gap || ""}
-              onChange={(e) => handlePropChange("gap", e.target.value)}
-              className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-            >
-              <option value="">No Gap</option>
-              <option value="1">4px (gap-1)</option>
-              <option value="2">8px (gap-2)</option>
-              <option value="3">12px (gap-3)</option>
-              <option value="4">16px (gap-4)</option>
-              <option value="6">24px (gap-6)</option>
-              <option value="8">32px (gap-8)</option>
-            </select>
-          </div>
+          {!isComposite && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Gap</span>
+              <select
+                value={component.props.gap || ""}
+                onChange={(e) => handlePropChange("gap", e.target.value)}
+                className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+              >
+                <option value="">No Gap</option>
+                <option value="1">4px (gap-1)</option>
+                <option value="2">8px (gap-2)</option>
+                <option value="3">12px (gap-3)</option>
+                <option value="4">16px (gap-4)</option>
+                <option value="6">24px (gap-6)</option>
+                <option value="8">32px (gap-8)</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -286,8 +342,8 @@ export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ co
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Weight</span>
               <select
-                value={component.props.fontWeight || "font-normal"}
-                onChange={(e) => handlePropChange("fontWeight", e.target.value)}
+                value={getSubPropVal("fontWeight", "font-normal")}
+                onChange={(e) => handlePropChange(getSubPropKey("fontWeight"), e.target.value)}
                 className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
               >
                 <option value="font-light">300 - Light</option>
@@ -325,314 +381,350 @@ export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ co
             {/* 2. Hero Typography Sizes & Colors */}
             {component.type === "hero" && (
               <>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Title Size</span>
-                  <select
-                    value={component.props.titleFontSize || "text-4xl"}
-                    onChange={(e) => handlePropChange("titleFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-xl">20px (xl)</option>
-                    <option value="text-2xl">24px (2xl)</option>
-                    <option value="text-3xl">30px (3xl)</option>
-                    <option value="text-4xl">36px (4xl)</option>
-                    <option value="text-5xl">48px (5xl)</option>
-                    <option value="text-6xl">60px (6xl)</option>
-                    <option value="text-7xl">72px (7xl)</option>
-                  </select>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Subhead Size</span>
-                  <select
-                    value={component.props.subtitleFontSize || "text-lg"}
-                    onChange={(e) => handlePropChange("subtitleFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-xs">12px (xs)</option>
-                    <option value="text-sm">14px (sm)</option>
-                    <option value="text-base">16px (base)</option>
-                    <option value="text-lg">18px (lg)</option>
-                    <option value="text-xl">20px (xl)</option>
-                    <option value="text-2xl">24px (2xl)</option>
-                  </select>
-                </div>
-                {/* Hero Colors */}
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="textColor"
-                      rawVal={component.props.textColor || "#ffffff"}
-                      defaultValue="#ffffff"
-                      onChange={handlePropChange}
-                    />
+                {subKey === "heading" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.titleFontSize || "text-4xl"}
+                        onChange={(e) => handlePropChange("titleFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-xl">20px (xl)</option>
+                        <option value="text-2xl">24px (2xl)</option>
+                        <option value="text-3xl">30px (3xl)</option>
+                        <option value="text-4xl">36px (4xl)</option>
+                        <option value="text-5xl">48px (5xl)</option>
+                        <option value="text-6xl">60px (6xl)</option>
+                        <option value="text-7xl">72px (7xl)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="titleColor"
+                          rawVal={component.props.titleColor || "#ffffff"}
+                          defaultValue="#ffffff"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Button BG</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="ctaBgColor"
-                      rawVal={component.props.ctaBgColor || "#ffffff"}
-                      defaultValue="#ffffff"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {subKey === "subheading" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.subtitleFontSize || "text-lg"}
+                        onChange={(e) => handlePropChange("subtitleFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-xs">12px (xs)</option>
+                        <option value="text-sm">14px (sm)</option>
+                        <option value="text-base">16px (base)</option>
+                        <option value="text-lg">18px (lg)</option>
+                        <option value="text-xl">20px (xl)</option>
+                        <option value="text-2xl">24px (2xl)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="subtitleColor"
+                          rawVal={component.props.subtitleColor || "#ffffff"}
+                          defaultValue="#ffffff"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Button Text</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="ctaTextColor"
-                      rawVal={component.props.ctaTextColor || "var(--color-primary)"}
-                      defaultValue="var(--color-primary)"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {subKey === "buttonText" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Button BG</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="ctaBgColor"
+                          rawVal={component.props.ctaBgColor || "#ffffff"}
+                          defaultValue="#ffffff"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Button Text</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="ctaTextColor"
+                          rawVal={component.props.ctaTextColor || "var(--color-primary)"}
+                          defaultValue="var(--color-primary)"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
 
             {/* 3. Testimonial Typography Sizes & Colors */}
             {component.type === "testimonial" && (
               <>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Quote Size</span>
-                  <select
-                    value={component.props.quoteFontSize || "text-base"}
-                    onChange={(e) => handlePropChange("quoteFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-sm">14px (sm)</option>
-                    <option value="text-base">16px (base)</option>
-                    <option value="text-lg">18px (lg)</option>
-                    <option value="text-xl">20px (xl)</option>
-                  </select>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Author Size</span>
-                  <select
-                    value={component.props.authorFontSize || "text-sm"}
-                    onChange={(e) => handlePropChange("authorFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-xs">12px (xs)</option>
-                    <option value="text-sm">14px (sm)</option>
-                    <option value="text-base">16px (base)</option>
-                  </select>
-                </div>
-                {/* Testimonial specific Colors */}
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Card BG</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="bgColor"
-                      rawVal={component.props.bgColor || "#ffffff"}
-                      defaultValue="#ffffff"
-                      onChange={handlePropChange}
-                    />
+                {subKey === "quote" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.quoteFontSize || "text-base"}
+                        onChange={(e) => handlePropChange("quoteFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-sm">14px (sm)</option>
+                        <option value="text-base">16px (base)</option>
+                        <option value="text-lg">18px (lg)</option>
+                        <option value="text-xl">20px (xl)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="quoteColor"
+                          rawVal={component.props.quoteColor || "#334155"}
+                          defaultValue="#334155"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Quote Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="textColor"
-                      rawVal={component.props.textColor || "#334155"}
-                      defaultValue="#334155"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {subKey === "author" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.authorFontSize || "text-sm"}
+                        onChange={(e) => handlePropChange("authorFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-xs">12px (xs)</option>
+                        <option value="text-sm">14px (sm)</option>
+                        <option value="text-base">16px (base)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="authorColor"
+                          rawVal={component.props.authorColor || "#0f172a"}
+                          defaultValue="#0f172a"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Author Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="authorColor"
-                      rawVal={component.props.authorColor || "#0f172a"}
-                      defaultValue="#0f172a"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {(subKey === "company" || subKey === "role") && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Accent Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="detailsColor"
+                          rawVal={component.props.detailsColor || "var(--color-primary)"}
+                          defaultValue="var(--color-primary)"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Accent Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="accentColor"
-                      rawVal={component.props.accentColor || "var(--color-primary)"}
-                      defaultValue="var(--color-primary)"
-                      onChange={handlePropChange}
-                    />
-                  </div>
-                </div>
+                )}
               </>
             )}
 
             {/* 4. FAQ Typography Sizes & Colors */}
             {component.type === "faq" && (
               <>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Question Size</span>
-                  <select
-                    value={component.props.questionFontSize || "text-sm"}
-                    onChange={(e) => handlePropChange("questionFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-xs">12px (xs)</option>
-                    <option value="text-sm">14px (sm)</option>
-                    <option value="text-base">16px (base)</option>
-                    <option value="text-lg">18px (lg)</option>
-                  </select>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Answer Size</span>
-                  <select
-                    value={component.props.answerFontSize || "text-xs"}
-                    onChange={(e) => handlePropChange("answerFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-xs">12px (xs)</option>
-                    <option value="text-sm">14px (sm)</option>
-                    <option value="text-base">16px (base)</option>
-                  </select>
-                </div>
-                {/* FAQ specific Colors */}
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Panel BG</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="bgColor"
-                      rawVal={component.props.bgColor || "#ffffff"}
-                      defaultValue="#ffffff"
-                      onChange={handlePropChange}
-                    />
+                {subKey === "question" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.questionFontSize || "text-sm"}
+                        onChange={(e) => handlePropChange("questionFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-xs">12px (xs)</option>
+                        <option value="text-sm">14px (sm)</option>
+                        <option value="text-base">16px (base)</option>
+                        <option value="text-lg">18px (lg)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="questionColor"
+                          rawVal={component.props.questionColor || "#1e293b"}
+                          defaultValue="#1e293b"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Question Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="textColor"
-                      rawVal={component.props.textColor || "#1e293b"}
-                      defaultValue="#1e293b"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {subKey === "answer" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.answerFontSize || "text-xs"}
+                        onChange={(e) => handlePropChange("answerFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-xs">12px (xs)</option>
+                        <option value="text-sm">14px (sm)</option>
+                        <option value="text-base">16px (base)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="answerColor"
+                          rawVal={component.props.answerColor || "#475569"}
+                          defaultValue="#475569"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Answer Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="answerColor"
-                      rawVal={component.props.answerColor || "#475569"}
-                      defaultValue="#475569"
-                      onChange={handlePropChange}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Accent Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="accentColor"
-                      rawVal={component.props.accentColor || "var(--color-primary)"}
-                      defaultValue="var(--color-primary)"
-                      onChange={handlePropChange}
-                    />
-                  </div>
-                </div>
+                )}
               </>
             )}
 
             {/* 5. Course Card Typography Sizes & Colors */}
             {component.type === "courseCard" && (
               <>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Title Size</span>
-                  <select
-                    value={component.props.titleFontSize || "text-lg"}
-                    onChange={(e) => handlePropChange("titleFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-sm">14px (sm)</option>
-                    <option value="text-base">16px (base)</option>
-                    <option value="text-lg">18px (lg)</option>
-                    <option value="text-xl">20px (xl)</option>
-                  </select>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Details Size</span>
-                  <select
-                    value={component.props.detailsFontSize || "text-xs"}
-                    onChange={(e) => handlePropChange("detailsFontSize", e.target.value)}
-                    className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
-                  >
-                    <option value="text-xs">12px (xs)</option>
-                    <option value="text-sm">14px (sm)</option>
-                    <option value="text-base">16px (base)</option>
-                  </select>
-                </div>
-                {/* Course Card Colors */}
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Card BG</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="bgColor"
-                      rawVal={component.props.bgColor || "#ffffff"}
-                      defaultValue="#ffffff"
-                      onChange={handlePropChange}
-                    />
+                {subKey === "title" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.titleFontSize || "text-lg"}
+                        onChange={(e) => handlePropChange("titleFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-sm">14px (sm)</option>
+                        <option value="text-base">16px (base)</option>
+                        <option value="text-lg">18px (lg)</option>
+                        <option value="text-xl">20px (xl)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="titleColor"
+                          rawVal={component.props.titleColor || "#1e293b"}
+                          defaultValue="#1e293b"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Title Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="textColor"
-                      rawVal={component.props.textColor || "#1e293b"}
-                      defaultValue="#1e293b"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {(subKey === "duration" || subKey === "instructor") && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Size</span>
+                      <select
+                        value={component.props.detailsFontSize || "text-xs"}
+                        onChange={(e) => handlePropChange("detailsFontSize", e.target.value)}
+                        className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
+                      >
+                        <option value="text-xs">12px (xs)</option>
+                        <option value="text-sm">14px (sm)</option>
+                        <option value="text-base">16px (base)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="detailsColor"
+                          rawVal={component.props.detailsColor || "#64748b"}
+                          defaultValue="#64748b"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Details Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="detailsColor"
-                      rawVal={component.props.detailsColor || "#64748b"}
-                      defaultValue="#64748b"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {subKey === "badge" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Badge BG</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="badgeBgColor"
+                          rawVal={component.props.badgeBgColor || "var(--color-primary)"}
+                          defaultValue="var(--color-primary)"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Accent Color</span>
-                  <div className="w-44 flex justify-end">
-                    <ColorPicker
-                      label=""
-                      propKey="accentColor"
-                      rawVal={component.props.accentColor || "var(--color-primary)"}
-                      defaultValue="var(--color-primary)"
-                      onChange={handlePropChange}
-                    />
+                )}
+                {subKey === "price" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Text Color</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="priceColor"
+                          rawVal={component.props.priceColor || "#1e293b"}
+                          defaultValue="#1e293b"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
+                {subKey === "button" && (
+                  <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Button BG</span>
+                      <div className="w-44 flex justify-end">
+                        <ColorPicker
+                          label=""
+                          propKey="ctaBgColor"
+                          rawVal={component.props.ctaBgColor || "var(--color-primary)"}
+                          defaultValue="var(--color-primary)"
+                          onChange={handlePropChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -713,8 +805,8 @@ export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ co
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Height</span>
               <select
-                value={component.props.lineHeight || "leading-normal"}
-                onChange={(e) => handlePropChange("lineHeight", e.target.value)}
+                value={getSubPropVal("lineHeight", "leading-normal")}
+                onChange={(e) => handlePropChange(getSubPropKey("lineHeight"), e.target.value)}
                 className="w-44 bg-white text-xs text-slate-800 border border-slate-200 rounded-lg p-1.5 focus:border-blue-600 focus:outline-none font-medium cursor-pointer"
               >
                 <option value="leading-none">None (1.0)</option>
@@ -725,19 +817,21 @@ export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ co
               </select>
             </div>
 
-            {/* Color Row */}
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Color</span>
-              <div className="w-44 flex justify-end">
-                <ColorPicker
-                  label=""
-                  propKey="color"
-                  rawVal={component.props.color || (component.type === "text" ? "#475569" : "#0f172a")}
-                  defaultValue={component.type === "text" ? "#475569" : "#0f172a"}
-                  onChange={handlePropChange}
-                />
+            {/* Color Row - only for simple/non-composite components */}
+            {!isComposite && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider shrink-0">Color</span>
+                <div className="w-44 flex justify-end">
+                  <ColorPicker
+                    label=""
+                    propKey="color"
+                    rawVal={component.props.color || (component.type === "text" ? "#475569" : "#0f172a")}
+                    defaultValue={component.type === "text" ? "#475569" : "#0f172a"}
+                    onChange={handlePropChange}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Align Row */}
             <div className="flex items-center justify-between gap-3">
@@ -751,9 +845,9 @@ export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ co
                   <button
                     key={a.val}
                     type="button"
-                    onClick={() => handlePropChange("align", a.val)}
+                    onClick={() => handlePropChange(getSubPropKey("align"), a.val)}
                     className={`py-1 text-[10px] rounded-md font-bold smooth-transition border-0 cursor-pointer ${
-                      (component.props.align || "left") === a.val
+                      getSubPropVal("align", "left") === a.val
                         ? "bg-blue-600 text-white shadow-2xs"
                         : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
                     }`}
@@ -776,9 +870,9 @@ export const CommonStyleProperties: React.FC<CommonStylePropertiesProps> = ({ co
                   <button
                     key={decor.val}
                     type="button"
-                    onClick={() => handlePropChange("textDecoration", decor.val)}
+                    onClick={() => handlePropChange(getSubPropKey("textDecoration"), decor.val)}
                     className={`py-1 text-[10px] rounded-md font-bold smooth-transition border-0 cursor-pointer ${
-                      (component.props.textDecoration || "no-underline") === decor.val
+                      getSubPropVal("textDecoration", "no-underline") === decor.val
                         ? "bg-blue-600 text-white shadow-2xs"
                         : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
                     }`}

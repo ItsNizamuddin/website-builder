@@ -1,9 +1,12 @@
 "use client";
 
 import React from "react";
-import { ComponentProps, resolveThemeColor } from "./shared";
+import { ComponentProps, resolveThemeColor, getSubElementClass, getSubAlignClass, selectSubElement, selectParentElement } from "./shared";
+import { useBuilderStore } from "@/store/useBuilderStore";
 
-export const HeroComp: React.FC<ComponentProps> = ({ props, mode }) => {
+export const HeroComp: React.FC<ComponentProps> = ({ props, mode, id, sectionId }) => {
+  const { selectedElement, setSelectedElement } = useBuilderStore();
+
   const {
     heading = "Hero Title",
     subheading = "Subheading",
@@ -22,10 +25,9 @@ export const HeroComp: React.FC<ComponentProps> = ({ props, mode }) => {
     subtitleFontSize = "text-lg"
   } = props;
 
-  const isWrapperBgActive = props.bgType && props.bgType !== "none";
-  const resolvedBg = isWrapperBgActive ? "transparent" : resolveThemeColor(props.bgColor, "#2563eb", "var(--color-primary)");
-  const resolvedStart = isWrapperBgActive ? "transparent" : resolveThemeColor(props.gradientStart, "#3b82f6", "var(--color-gradient-start)");
-  const resolvedEnd = isWrapperBgActive ? "transparent" : resolveThemeColor(props.gradientEnd, "#1e3a8a", "var(--color-gradient-end)");
+  const resolvedBg = resolveThemeColor(props.bgColor, "#2563eb", "var(--color-primary)");
+  const resolvedStart = resolveThemeColor(props.gradientStart, "#3b82f6", "var(--color-gradient-start)");
+  const resolvedEnd = resolveThemeColor(props.gradientEnd, "#1e3a8a", "var(--color-gradient-end)");
   const resolvedCtaText = resolveThemeColor(props.ctaTextColor, "#2563eb", "var(--color-primary)");
 
   const alignClass = {
@@ -35,7 +37,10 @@ export const HeroComp: React.FC<ComponentProps> = ({ props, mode }) => {
   }[align as "left" | "center" | "right"] || "text-left items-start";
 
   const handleCtaClick = (e: React.MouseEvent) => {
-    if (mode === "edit") e.preventDefault();
+    if (mode === "edit") {
+      e.preventDefault();
+      selectSubElement("buttonText", e, mode, sectionId, id, setSelectedElement);
+    }
   };
 
   const containerStyle: React.CSSProperties = {
@@ -43,12 +48,19 @@ export const HeroComp: React.FC<ComponentProps> = ({ props, mode }) => {
   };
 
   let bgClass = "";
-  if (props.bgType === "none") {
+  const bgType = props.bgType;
+
+  if (bgType === "none") {
     containerStyle.background = "transparent";
     containerStyle.backgroundColor = "transparent";
-  } else if (isWrapperBgActive) {
-    containerStyle.background = "transparent";
-    containerStyle.backgroundColor = "transparent";
+  } else if (bgType === "color") {
+    containerStyle.backgroundColor = resolvedBg;
+  } else if (bgType === "gradient") {
+    containerStyle.background = `linear-gradient(135deg, ${resolvedStart}, ${resolvedEnd})`;
+  } else if (bgType === "image" && props.bgImage) {
+    containerStyle.backgroundImage = `url(${props.bgImage})`;
+    containerStyle.backgroundSize = "cover";
+    containerStyle.backgroundPosition = "center";
   } else if (bgStyle === "solid") {
     containerStyle.backgroundColor = resolvedBg;
   } else if (bgStyle === "custom-gradient" || (bgStyle === "preset-gradient" && bgGradient === "from-blue-600 to-indigo-900")) {
@@ -59,38 +71,59 @@ export const HeroComp: React.FC<ComponentProps> = ({ props, mode }) => {
 
   const shadowClass = shadowSize === "none" ? "shadow-none" : shadowSize;
 
-  const textAlignClass = {
-    left: "text-left mr-auto",
-    center: "text-center mx-auto",
-    right: "text-right ml-auto"
-  }[align as "left" | "center" | "right"] || "text-left mr-auto";
+  const finalTitleColor = props.titleColor || textColor;
+  const finalSubtitleColor = props.subtitleColor || textColor;
+
+  const gapMap = {
+    "1": "gap-1",
+    "2": "gap-2",
+    "3": "gap-3",
+    "4": "gap-4",
+    "6": "gap-6",
+    "8": "gap-8",
+    "12": "gap-12",
+  };
+  const gapClass = gapMap[props.contentGap as keyof typeof gapMap] || "gap-4";
+  const TitleTag = (props.titleTag || "h1") as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
   return (
     <div
-      className={`w-full ${borderRadius} p-8 md:p-12 ${bgClass} border border-slate-200/20 ${shadowClass} flex flex-col justify-center ${alignClass} ${marginTop} ${marginBottom}`}
+      onClick={(e) => selectParentElement(e, mode, sectionId, id, setSelectedElement)}
+      className={`w-full ${borderRadius} p-8 md:p-12 ${bgClass} border border-slate-200/20 ${shadowClass} flex flex-col justify-center ${gapClass} ${alignClass} ${marginTop} ${marginBottom} cursor-pointer`}
       style={containerStyle}
     >
-      <h1
-        className={`${titleFontSize} font-extrabold tracking-tight max-w-2xl leading-tight ${textAlignClass}`}
-        style={{ color: textColor }}
+      <TitleTag
+        onClick={(e) => selectSubElement("heading", e, mode, sectionId, id, setSelectedElement)}
+        className={`${titleFontSize} ${props.titleFontWeight || "font-extrabold"} tracking-tight max-w-2xl ${props.titleLineHeight || "leading-tight"} ${getSubAlignClass(props.titleAlign, align)} ${props.titleDecoration || "no-underline"} ${getSubElementClass("heading", mode, id, selectedElement)}`}
+        style={{ color: finalTitleColor }}
       >
         {heading}
-      </h1>
-      <p
-        className={`mt-4 ${subtitleFontSize} max-w-xl font-light leading-relaxed opacity-90 ${textAlignClass}`}
-        style={{ color: textColor }}
-      >
-        {subheading}
-      </p>
+      </TitleTag>
+      {(() => {
+        const SubheadingTag = (props.subheadingTag || "p") as "p" | "h2" | "h3" | "h4" | "h5" | "h6";
+        return (
+          <SubheadingTag
+            onClick={(e) => selectSubElement("subheading", e, mode, sectionId, id, setSelectedElement)}
+            className={`${subtitleFontSize} ${props.subtitleFontWeight || "font-light"} ${props.subtitleLineHeight || "leading-relaxed"} opacity-90 ${getSubAlignClass(props.subtitleAlign, align)} ${props.subtitleDecoration || "no-underline"} ${getSubElementClass("subheading", mode, id, selectedElement)}`}
+            style={{ color: finalSubtitleColor }}
+          >
+            {subheading}
+          </SubheadingTag>
+        );
+      })()}
       {buttonText && (
-        <a
-          href={buttonUrl}
-          onClick={handleCtaClick}
-          className="mt-8 px-6 py-3 font-bold rounded-lg hover:brightness-105 hover:scale-[1.02] active:scale-[0.98] smooth-transition shadow-lg shadow-black/10 inline-block"
-          style={{ backgroundColor: ctaBgColor, color: resolvedCtaText }}
-        >
-          {buttonText}
-        </a>
+        <div className={getSubElementClass("buttonText", mode, id, selectedElement)}>
+          <a
+            href={buttonUrl}
+            onClick={handleCtaClick}
+            target={props.buttonOpenInNewTab ? "_blank" : undefined}
+            rel={props.buttonOpenInNewTab ? "noopener noreferrer" : undefined}
+            className="px-6 py-3 font-bold rounded-lg hover:brightness-105 hover:scale-[1.02] active:scale-[0.98] smooth-transition shadow-lg shadow-black/10 inline-block cursor-pointer"
+            style={{ backgroundColor: ctaBgColor, color: resolvedCtaText }}
+          >
+            {buttonText}
+          </a>
+        </div>
       )}
     </div>
   );
